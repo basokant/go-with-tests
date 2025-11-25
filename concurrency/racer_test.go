@@ -1,6 +1,7 @@
 package concurrency
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -32,8 +33,8 @@ func TestRacer(t *testing.T) {
 
 		_, err := ConfigurableRacer(server.URL, server.URL, 20*time.Millisecond)
 
-		if err == nil {
-			t.Error("expected an error but didn't get one")
+		if !errors.Is(err, ErrTimeout) {
+			t.Errorf("expected a timeout error, received %v", err)
 		}
 	})
 }
