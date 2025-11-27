@@ -80,7 +80,7 @@ func TestWalk(t *testing.T) {
 				"Cow":   "Moo",
 				"Sheep": "Baa",
 			},
-			[]string{"Baa", "Moo"},
+			[]string{"Moo", "Baa"},
 		},
 	}
 
@@ -91,7 +91,6 @@ func TestWalk(t *testing.T) {
 				got = append(got, input)
 			})
 
-			slices.Sort(got)
 			if !slices.Equal(got, test.ExpectedCalls) {
 				t.Errorf("got %v, want %v", got, test.ExpectedCalls)
 			}
