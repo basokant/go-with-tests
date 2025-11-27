@@ -98,4 +98,25 @@ func TestWalk(t *testing.T) {
 		})
 	}
 
+	t.Run("channels", func(t *testing.T) {
+		aChannel := make(chan Profile)
+
+		go func() {
+			aChannel <- Profile{33, "Berlin"}
+			aChannel <- Profile{34, "Katowice"}
+			close(aChannel)
+		}()
+
+		var got []string
+		want := []string{"Berlin", "Katowice"}
+
+		Walk(aChannel, func(input string) {
+			got = append(got, input)
+		})
+
+		if !slices.Equal(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
 }
