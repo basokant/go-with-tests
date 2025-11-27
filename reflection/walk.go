@@ -7,15 +7,22 @@ import (
 func Walk(x any, fn func(input string)) {
 	val := getValue(x)
 
-	for i := 0; i < val.NumField(); i++ {
-		field := val.Field(i)
+	numberOfValues := 0
+	var getField func(int) reflect.Value
 
-		switch field.Kind() {
-		case reflect.String:
-			fn(field.String())
-		case reflect.Struct:
-			Walk(field.Interface(), fn)
-		}
+	switch val.Kind() {
+	case reflect.String:
+		fn(val.String())
+	case reflect.Struct:
+		numberOfValues = val.NumField()
+		getField = val.Field
+	case reflect.Slice, reflect.Array:
+		numberOfValues = val.Len()
+		getField = val.Index
+	}
+
+	for i := 0; i < numberOfValues; i++ {
+		Walk(getField(i).Interface(), fn)
 	}
 }
 
