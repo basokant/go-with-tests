@@ -38,7 +38,7 @@ func (s *SpyStore) assertWasNotCancelled() {
 }
 
 func TestServer(t *testing.T) {
-	t.Run("server responds", func(t *testing.T) {
+	t.Run("returns data from store", func(t *testing.T) {
 		data := "hello, world"
 		store := SpyStore{response: data, t: t}
 		svr := Server(&store)
