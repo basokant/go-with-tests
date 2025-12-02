@@ -2,6 +2,7 @@ package context
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,38 +10,39 @@ import (
 )
 
 type SpyStore struct {
-	response  string
-	cancelled bool
-	t         testing.TB
+	response string
 }
 
-func (s *SpyStore) Fetch() string {
-	time.Sleep(100 * time.Millisecond)
-	return s.response
-}
+func (s *SpyStore) Fetch(ctx context.Context) (string, error) {
+	data := make(chan string, 1)
 
-func (s *SpyStore) Cancel() {
-	s.cancelled = true
-}
+	go func() {
+		var result string
+		for _, c := range s.response {
+			select {
+			case <-ctx.Done():
+				log.Println("spy store got cancelled")
+				return
+			default:
+				time.Sleep(10 * time.Millisecond)
+				result += string(c)
+			}
+		}
+		data <- result
+	}()
 
-func (s *SpyStore) assertWasCancelled() {
-	s.t.Helper()
-	if !s.cancelled {
-		s.t.Error("store was not told to cancel")
-	}
-}
-
-func (s *SpyStore) assertWasNotCancelled() {
-	s.t.Helper()
-	if s.cancelled {
-		s.t.Error("store was told to cancel")
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	case res := <-data:
+		return res, nil
 	}
 }
 
 func TestServer(t *testing.T) {
 	t.Run("returns data from store", func(t *testing.T) {
 		data := "hello, world"
-		store := SpyStore{response: data, t: t}
+		store := SpyStore{response: data}
 		svr := Server(&store)
 
 		request := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -51,13 +53,11 @@ func TestServer(t *testing.T) {
 		if response.Body.String() != data {
 			t.Errorf("got %q, want %q", response.Body.String(), data)
 		}
-
-		store.assertWasNotCancelled()
 	})
 
 	t.Run("store cancels work if request is cancelled", func(t *testing.T) {
 		data := "hello, world"
-		store := SpyStore{response: data, t: t}
+		store := SpyStore{response: data}
 		svr := Server(&store)
 
 		request := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -70,6 +70,14 @@ func TestServer(t *testing.T) {
 
 		svr.ServeHTTP(response, request)
 
-		store.assertWasCancelled()
+		assertTimeoutResponse(t, response)
 	})
+}
+
+func assertTimeoutResponse(t testing.TB, rec *httptest.ResponseRecorder) {
+	t.Helper()
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected response code to be %v, got %v", http.StatusNotFound, rec.Code)
+	}
 }
