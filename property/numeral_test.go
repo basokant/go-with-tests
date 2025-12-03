@@ -1,7 +1,10 @@
 package property
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
+	"strings"
 	"testing"
 	"testing/quick"
 )
@@ -68,16 +71,55 @@ func TestConvertingToArabic(t *testing.T) {
 	}
 }
 
+// for any N, taking the result of ConvertToRoman(N) and passing it to ConvertToArabicm should return N
 func TestPropertiesOfConversion(t *testing.T) {
 	assertion := func(arabic uint16) bool {
 		if arabic > 3999 {
 			return true
 		}
-		t.Log("testing", arabic)
+		t.Log("testing conversion for", arabic)
 
 		roman := ConvertToRoman(arabic)
 		fromRoman := ConvertToArabic(roman)
 		return fromRoman == arabic
+	}
+
+	if err := quick.Check(assertion, nil); err != nil {
+		t.Error("failed checks", err)
+	}
+}
+
+func indexRomanNumeral(numeral string) int {
+	return slices.IndexFunc(AllRomanNumerals, func(r RomanNumeral) bool {
+		return r.Symbol == numeral
+	})
+}
+
+func subtractorSortFunc(a, b string) int {
+	aIdx := indexRomanNumeral(a)
+	bIdx := indexRomanNumeral(b)
+
+	order := cmp.Compare(aIdx, bIdx)
+
+	if order < 0 && (b == "I" || b == "X" || b == "C") {
+		return 1
+	}
+
+	return order
+}
+
+// only I, X, and C can be used as 'subtractors'
+func TestPropertiesOfSubtractors(t *testing.T) {
+	assertion := func(arabic uint16) bool {
+		if arabic > 3999 {
+			return true
+		}
+
+		roman := ConvertToRoman(arabic)
+		runes := strings.Split(roman, "")
+		t.Log("testing subtractors for", arabic, roman)
+
+		return slices.IsSortedFunc(runes, subtractorSortFunc)
 	}
 
 	if err := quick.Check(assertion, nil); err != nil {
