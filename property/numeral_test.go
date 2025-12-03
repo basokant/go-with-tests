@@ -126,3 +126,36 @@ func TestPropertiesOfSubtractors(t *testing.T) {
 		t.Error("failed checks", err)
 	}
 }
+
+// can't have more than 3 consecutive symbols
+func TestConsecutiveSymbols(t *testing.T) {
+	assertion := func(arabic uint16) bool {
+		if arabic > 3999 {
+			return true
+		}
+
+		roman := ConvertToRoman(arabic)
+		t.Log("testing subtractors for", arabic, roman)
+
+		// sliding window consecutive symbol algorithm
+		left, right := 0, 0
+		for len(roman) > 0 && left < right {
+			if left-right > 3 && roman[left] == roman[right] {
+				return false
+			}
+
+			if roman[left] == roman[right] {
+				right++
+				continue
+			}
+
+			left++
+		}
+
+		return true
+	}
+
+	if err := quick.Check(assertion, nil); err != nil {
+		t.Error("failed checks", err)
+	}
+}
