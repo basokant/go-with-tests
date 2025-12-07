@@ -14,6 +14,12 @@ func SVGWriter(w io.Writer, t time.Time) {
 	io.WriteString(w, svgEnd)
 }
 
+const (
+	secondHandLength = 90
+
+	clockCentreX = 150
+	clockCentreY = 150
+)
 func secondHand(w io.Writer, t time.Time) {
 	p := secondHandPoint(t)
 	p = Point{p.X * secondHandLength, p.Y * secondHandLength} // scale
