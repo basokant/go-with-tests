@@ -3,6 +3,7 @@ package clockface
 import (
 	"bytes"
 	"encoding/xml"
+	"slices"
 	"testing"
 	"time"
 )
@@ -62,10 +63,6 @@ func TestSVGWriterSecondHand(t *testing.T) {
 }
 
 func containsLine(l Line, ls []Line) bool {
-	for _, line := range ls {
-		if line == l {
-			return true
-		}
 	}
-	return false
+	return slices.Contains(ls, l)
 }
