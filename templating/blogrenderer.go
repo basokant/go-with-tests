@@ -2,6 +2,8 @@ package blogrenderer
 
 import (
 	"embed"
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/parser"
 	"html/template"
 	"io"
 	"strings"
@@ -14,23 +16,26 @@ var (
 	postTemplates embed.FS
 )
 
-type PostViewModel struct {
-	Title, SanitisedTitle, Description, Body string
-	Tags                                     []string
+type postViewModel struct {
+	blogposts.Post
+	SanitisedTitle string
+	HTMLBody       template.HTML
 }
 
 func sanitisedTitle(title string) string {
 	return strings.ToLower(strings.ReplaceAll(title, " ", "-"))
 }
 
-func NewPostViewModel(p blogposts.Post) PostViewModel {
-	return PostViewModel{
-		Title:          p.Title,
-		SanitisedTitle: sanitisedTitle(p.Title),
-		Description:    p.Description,
-		Body:           p.Body,
-		Tags:           p.Tags,
-	}
+func NewPostViewModel(p blogposts.Post) postViewModel {
+	vm := postViewModel{Post: p}
+
+	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
+	doc := parser.NewWithExtensions(extensions)
+
+	vm.SanitisedTitle = sanitisedTitle(p.Title)
+	vm.HTMLBody = template.HTML(markdown.ToHTML([]byte(p.Body), doc, nil))
+
+	return vm
 }
 
 type PostRenderer struct {
@@ -47,11 +52,11 @@ func NewPostRenderer() (*PostRenderer, error) {
 }
 
 func (r *PostRenderer) Render(w io.Writer, p blogposts.Post) error {
-	return r.templ.ExecuteTemplate(w, "blog.gohtml", p)
+	return r.templ.ExecuteTemplate(w, "blog.gohtml", NewPostViewModel(p))
 }
 
 func (r *PostRenderer) RenderIndex(w io.Writer, posts []blogposts.Post) error {
-	postViewModels := make([]PostViewModel, 0, len(posts))
+	postViewModels := make([]postViewModel, 0, len(posts))
 	for _, post := range posts {
 		postViewModels = append(postViewModels, NewPostViewModel(post))
 	}
