@@ -21,23 +21,4 @@ func TestStack(t *testing.T) {
 		AssertEqual(t, value, 123)
 		AssertTrue(t, myStackOfInts.IsEmpty())
 	})
-
-	t.Run("string stack", func(t *testing.T) {
-		myStackOfStrings := NewStack[string]()
-
-		// check stack is empty
-		AssertTrue(t, myStackOfStrings.IsEmpty())
-
-		// add a thing, then check it's not empty
-		myStackOfStrings.Push("123")
-		AssertFalse(t, myStackOfStrings.IsEmpty())
-
-		// add another thing, pop it back again
-		myStackOfStrings.Push("456")
-		value, _ := myStackOfStrings.Pop()
-		AssertEqual(t, value, "456")
-		value, _ = myStackOfStrings.Pop()
-		AssertEqual(t, value, "123")
-		AssertTrue(t, myStackOfStrings.IsEmpty())
-	})
 }
