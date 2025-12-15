@@ -26,3 +26,7 @@ func (s *Stack[T]) Pop() (T, bool) {
 	s.values = s.values[:index]
 	return el, true
 }
+
+func NewStack[T any]() *Stack[T] {
+	return new(Stack[T])
+}
